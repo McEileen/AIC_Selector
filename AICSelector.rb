@@ -2,7 +2,8 @@
 require "csv"
 
 class ProgramMatchRanker
-  attr_reader :final_matches, :matches_to_find, :student_file, :program_file, :output_file
+  attr_reader :matches_to_find, :student_file, :program_file, :output_file
+  attr_accessor :final_matches
 
   UNRANKED_STUDENT_COLUMNS = {
     12 => "Artmaking", 13 => "Audio/Music Production", 14 => "Drawing/Graphic Design", 15 => "Digital/Video Production", 16 => "Storytelling"
@@ -73,10 +74,16 @@ class ProgramMatchRanker
       program[:interests].select {|program_interest| student[:interests].include?(program_interest)}.length
     end
     second_matches = (second_matches - priority_matches).reverse!
-    while (second_matches + priority_matches).length > @matches_to_find
-      second_matches = second_matches[0..-2]
+    if priority_matches.length > @matches_to_find
+      @final_matches = priority_matches.shuffle[0..(@matches_to_find - 1)]
+    elsif priority_matches.length == @matches_to_find
+      @final_matches = @priority_matches
+    else
+      while (second_matches + priority_matches).length > @matches_to_find
+        second_matches = second_matches[0..-2]
+      end
+      @final_matches = priority_matches + second_matches
     end
-    @final_matches = priority_matches + second_matches
   end
 
   def rank_matches_names(student, programs)
@@ -85,7 +92,7 @@ class ProgramMatchRanker
   end
 
   def rank_matches_organizations(student, programs)
-    p final_matches_organizations = @final_matches.map {|program| program[:organization]}
+    final_matches_organizations = @final_matches.map {|program| program[:organization]}
   end
 
   def rank_matches_urls(student, programs)
@@ -124,5 +131,5 @@ class ProgramMatchRanker
 end
 
 
-non_chi_aa_results = ProgramMatchRanker.new(3, "Chi_Res_Re_Imagine24 ApplicantData_Pathways_2.16.16_AA.csv", "Chi_Res_Pathway Program Data_2.16.16.csv", "Chi_Res_Results_AA.csv")
-non_chi_aa_results.run
+chi_results = ProgramMatchRanker.new(3, "Chi_Res_Re_Imagine24 ApplicantData_Pathways_2.16.16.csv", "Chi_Res_Pathway Program Data_2.16.16.csv", "Chi_Res_Results.csv")
+chi_results.run
